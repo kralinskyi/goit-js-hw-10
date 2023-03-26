@@ -10,6 +10,11 @@ const refs = {
 
 refs.searchBox.addEventListener('input', debounce(onSearch, 300));
 
+function clearMarkup() {
+  refs.countriesList.innerHTML = '';
+  refs.countryInfo.innerHTML = '';
+}
+
 function onSearch(event) {
   const searchQuery = event.target.value.trim();
 
@@ -21,75 +26,62 @@ function onSearch(event) {
   fetchCountries(searchQuery)
     .then(countries => {
       clearMarkup();
-      if (countries.length === 0) {
-        Notiflix.Notify.failure('Oops, there is no country with that name');
-      } else if (countries.length > 10) {
+      if (countries.length > 10) {
         Notiflix.Notify.info(
           'Too many matches found. Please enter a more specific name.'
         );
-      } else if (countries.length === 1) {
-        renderCountryInfo(countries[0]);
-      } else {
+      } else if (countries.length <= 10 && countries.length >= 2) {
         renderCountriesList(countries);
+      } else {
+        console.log(countries);
+        renderCountryInfo(countries[0]);
       }
     })
     .catch(error => {
-      console.log(error);
+      if ((error.message = 404)) {
+        clearMarkUp();
+
+        Notiflix.Notify.failure('Oops, there is no country with that name');
+        refs.searchBox.value = '';
+        console.log(error);
+      }
     });
-}
 
-function clearMarkup() {
-  refs.countriesList.innerHTML = '';
-  refs.countryInfo.innerHTML = '';
-}
+  function clearMarkUp() {
+    refs.countriesList.innerHTML = '';
+    refs.countryInfo.innerHTML = '';
+  }
 
-function renderCountryInfo(country) {
-  const fifaId = country.fifa.toString().toLowerCase();
+  function renderCountryInfo(country) {
+    const { flags, name, capital, population, languages } = country;
 
-  refs.countryInfo.innerHTML = `
+    refs.countryInfo.innerHTML = `
     <div class="country-card">
-      <img src="${country.flags.svg}" alt="${country.name.official} flag"/>
+      <img src="${flags.svg}" alt="${name.official} flag"/>
       <div class="country-info-card">
-        <h2>${country.name.official}</h2>
-        <p><b>Capital:</b> ${country.capital}</p>
-        <p><b>Population:</b> ${country.population.toLocaleString()}</p>
-        <p><b>Languages:</b> ${country.languages[fifaId]}</p>
+        <h2>${name.official}</h2>
+        <p><b>Capital:</b> ${capital}</p>
+        <p><b>Population:</b> ${population.toLocaleString()}</p>
+        <p><b>Languages:</b> ${Object.values(languages)}</p>
       </div>
     </div>
   `;
-}
-
-function renderCountriesList(countries) {
-  const countriesMarkup = countries
-    .map(country => {
-      return `
-      <li class="country-list-item">
-        <img src="${country.flags.svg}" alt="${country.name.official} flag" />
-        <p>${country.name.official}</p>
-      </li>
-    `;
-    })
-    .join('');
-
-  refs.countriesList.innerHTML = `<ul class="country-list">${countriesMarkup}</ul>`;
-
-  refs.countriesList.addEventListener('click', onCountryClick);
-}
-
-function onCountryClick(event) {
-  if (event.target.nodeName !== 'LI') {
-    return;
   }
 
-  const countryName = event.target.querySelector('p').textContent;
+  function renderCountriesList(countries) {
+    const countriesMarkup = countries
+      .map(country => {
+        const { flags, name } = country;
 
-  fetchCountries(countryName)
-    .then(countries => {
-      if (countries.length === 1) {
-        renderCountryInfo(countries[0]);
-      }
-    })
-    .catch(error => {
-      console.log(error);
-    });
+        return `
+      <li class="country-list-item">
+        <img src="${flags.svg}" alt="${name.official} flag" />
+        <p>${name.official}</p>
+      </li>
+    `;
+      })
+      .join('');
+
+    refs.countriesList.innerHTML = `<ul class="country-list">${countriesMarkup}</ul>`;
+  }
 }
