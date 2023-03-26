@@ -16,6 +16,7 @@ function clearMarkup() {
 }
 
 function onSearch(event) {
+  event.preventDefault();
   const searchQuery = event.target.value.trim();
 
   if (searchQuery === '') {
